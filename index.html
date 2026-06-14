@@ -25,6 +25,9 @@
     .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
     .status { margin-top:12px; padding:12px; min-height:56px; background:#020617; border:1px solid var(--border); border-radius:12px; color:var(--muted); white-space:pre-wrap; }
     ul { margin:0; padding-left:20px; color:var(--muted); line-height:1.8; }
+    .viz-container { margin-top:12px; border-radius:12px; overflow:hidden; border:1px solid var(--border); background:#020617; }
+    #viz-canvas { width:100%; height:200px; display:block; }
+    #test-canvas { display:none !important; }
     code { background:#020617; border:1px solid var(--border); padding:2px 6px; border-radius:6px; color:#bfdbfe; }
     .ok { color: var(--green); } .err { color: var(--red); }
     @media (max-width:860px){ .grid{grid-template-columns:1fr;} .row{grid-template-columns:1fr;} }
@@ -85,6 +88,9 @@ stack(
           <li>如果代码里用了外部 samples，需要能联网加载样本。</li>
           <li>导出为 44.1kHz、16-bit、双声道 WAV。</li>
         </ul>
+        <div class="viz-container">
+          <canvas id="viz-canvas"></canvas>
+        </div>
       </div>
     </div>
   </div>

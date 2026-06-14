@@ -1,4 +1,5 @@
-import { initStrudel, evaluate, renderPatternAudio, hush, samples } from '@strudel/web';
+import { initStrudel, evaluate, renderPatternAudio, hush, samples, silence } from '@strudel/web';
+import { cleanupDraw, __pianoroll } from '@strudel/draw';
 
 const codeEl = document.getElementById('code');
 const durationEl = document.getElementById('duration');
@@ -11,6 +12,95 @@ let isPreviewing = false;
 let isExporting = false;
 const exportPreRollSeconds = 0.5;
 
+// --- Visualization ---
+const vizCanvas = document.getElementById('viz-canvas');
+const vizCtx = vizCanvas.getContext('2d');
+
+function resizeVizCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  vizCanvas.width = vizCanvas.clientWidth * dpr;
+  vizCanvas.height = vizCanvas.clientHeight * dpr;
+}
+resizeVizCanvas();
+window.addEventListener('resize', resizeVizCanvas);
+
+let vizRafId = null;
+let vizMemory = [];
+let vizLastQueryEnd = 0;
+let vizPattern = null;
+let vizCps = 0.5;
+
+function startVisualization(pattern) {
+  if (!pattern || pattern === silence) return;
+  resizeVizCanvas();
+  stopVisualization(); // 清理上一次
+
+  const cpm = Number(cpmEl.value) || 30;
+  vizCps = cpm / 60;
+  vizPattern = pattern;
+
+  const cycles = 4;
+  const playhead = 0.5;
+  const to = cycles * (1 - playhead);
+  const hideNegative = 1;
+  const inFrame = (hap, t) => (!hideNegative || hap.whole.begin >= 0) && hap.isWithinTime(t - cycles * playhead, t + to);
+
+  // 初始查询
+  vizMemory = pattern.queryArc(0, to).filter((h) => h.hasOnset());
+  vizLastQueryEnd = to;
+
+  function animate() {
+    if (!vizPattern) return;
+    const nowSec = performance.now() / 1000;
+    const currentCycle = nowSec * vizCps;
+    const t = currentCycle + to;
+
+    // 增量查询
+    if (t > vizLastQueryEnd) {
+      const newHaps = vizPattern.queryArc(vizLastQueryEnd, t).filter((h) => h.hasOnset());
+      vizMemory = vizMemory.concat(newHaps);
+      vizLastQueryEnd = t;
+    }
+
+    // 清理远处的 hap
+    vizMemory = vizMemory.filter((h) => h.whole.end >= currentCycle - cycles);
+
+    // 渲染
+    const visible = vizMemory.filter((hap) => inFrame(hap, currentCycle));
+    __pianoroll({
+      time: currentCycle,
+      ctx: vizCtx,
+      haps: visible,
+      cycles,
+      playhead,
+      fold: 1,
+      labels: 1,
+      fill: 1,
+      fillActive: 1,
+      active: '#60a5fa',
+      inactive: '#374151',
+      background: '#020617',
+      playheadColor: '#e5e7eb',
+      hideNegative,
+      id: 0,
+    });
+
+    vizRafId = requestAnimationFrame(animate);
+  }
+
+  vizRafId = requestAnimationFrame(animate);
+}
+
+function stopVisualization() {
+  if (vizRafId != null) {
+    cancelAnimationFrame(vizRafId);
+    vizRafId = null;
+  }
+  vizPattern = null;
+  cleanupDraw(false, 'viz');
+  vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+}
+
 function setPreviewing(value) {
   isPreviewing = value;
   previewBtn.textContent = value ? '停止试听' : '试听';
@@ -18,6 +108,7 @@ function setPreviewing(value) {
 
 function stopPreview(status = '已停止试听。') {
   try { hush(); } catch {}
+  stopVisualization();
   setPreviewing(false);
   if (status) setStatus(status);
 }
@@ -64,7 +155,8 @@ async function buildPattern({ code, cpm = 30, setAsCurrent = false }) {
 }
 
 async function preview({ code, cpm = 30 }) {
-  await buildPattern({ code, cpm, setAsCurrent: true });
+  const pattern = await buildPattern({ code, cpm, setAsCurrent: true });
+  startVisualization(pattern);
 }
 
 async function renderPatternAudioBlob(pattern, cps, beginCycle, endCycle) {
