@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strudel WAV 导出器</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0f172a; --panel:#111827; --panel2:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --blue:#60a5fa; --green:#34d399; --red:#f87171; --border:#374151; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: linear-gradient(180deg,#020617,var(--bg)); color:var(--text); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 24px; }
+    h1 { margin:0 0 8px; font-size:30px; }
+    p { line-height:1.6; color:var(--muted); }
+    .grid { display:grid; grid-template-columns: 1.25fr .75fr; gap:16px; margin-top:18px; }
+    .card { background: rgba(17,24,39,.96); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 10px 32px rgba(0,0,0,.25); }
+    label { display:block; font-weight:700; margin-bottom:8px; }
+    textarea, input { width:100%; border-radius:12px; border:1px solid var(--border); background:#020617; color:#fff; outline:none; }
+    textarea { min-height:360px; resize:vertical; padding:14px; font:13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    input { padding:10px 12px; font-size:15px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+    button { border:0; border-radius:999px; padding:11px 16px; font-weight:800; cursor:pointer; }
+    button.primary { background:var(--green); color:#052e1a; }
+    button.ghost { background:#020617; color:var(--text); border:1px solid var(--border); }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+    .status { margin-top:12px; padding:12px; min-height:56px; background:#020617; border:1px solid var(--border); border-radius:12px; color:var(--muted); white-space:pre-wrap; }
+    ul { margin:0; padding-left:20px; color:var(--muted); line-height:1.8; }
+    code { background:#020617; border:1px solid var(--border); padding:2px 6px; border-radius:6px; color:#bfdbfe; }
+    .ok { color: var(--green); } .err { color: var(--red); }
+    @media (max-width:860px){ .grid{grid-template-columns:1fr;} .row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Strudel WAV 导出器</h1>
+    <p>输入 Strudel 代码和导出时长，直接离线渲染为 <code>.wav</code> 文件。不会录屏，也不需要切换到 Strudel 页面。</p>
+    <div class="grid">
+      <div class="card">
+        <label for="code">Strudel 代码</label>
+        <textarea id="code">samples('github:tidalcycles/dirt-samples')
+
+stack(
+  s("bd:0 ~ bd:0 ~ sn:0 ~ bd:0 ~").gain(0.9),
+  s("~ hh:0 ~ hh:0 ~ hh:0 ~ hh:0").gain(0.25),
+
+  note("c2 ~ eb2 ~ f2 ~ g2 ~")
+    .s("sawtooth")
+    .slow(2)
+    .gain(0.45),
+
+  note("c4 eb4 g4 bb4")
+    .s("superpiano")
+    .slow(4)
+    .gain(0.3)
+)</textarea>
+        <div class="row">
+          <div>
+            <label for="duration">导出时长，秒</label>
+            <input id="duration" type="number" min="1" step="1" value="16" />
+          </div>
+          <div>
+            <label for="cpm">速度，CPM</label>
+            <input id="cpm" type="number" min="1" step="1" value="30" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="filename">文件名</label>
+            <input id="filename" value="strudel-output" />
+          </div>
+          <div></div>
+        </div>
+        <div class="actions">
+          <button id="previewBtn" class="ghost">试听</button>
+          <button id="exportBtn" class="primary">导出 WAV</button>
+        </div>
+        <div id="status" class="status">正在初始化 Strudel 引擎...</div>
+      </div>
+      <div class="card">
+        <strong>说明</strong>
+        <ul>
+          <li>点击 <code>试听</code> 可以直接在导出器页面播放当前代码；播放中再次点击同一个按钮即可停止。</li>
+          <li>Strudel pattern 通常是无限循环，所以必须指定导出时长。</li>
+          <li>速度用 <code>CPM</code> 控制，30 CPM 是 Strudel 官方默认速度，表示每分钟 30 个 cycle。</li>
+          <li>如果代码里用了外部 samples，需要能联网加载样本。</li>
+          <li>导出为 44.1kHz、16-bit、双声道 WAV。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>

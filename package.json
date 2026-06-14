@@ -1,0 +1,1 @@
+{"scripts":{"dev":"vite --host 0.0.0.0","export":"node cli/strudel-export.mjs","web":"vite --host 0.0.0.0"},"dependencies":{"@strudel/web":"1.3.0","commander":"12.1.0","playwright":"1.49.1","vite":"6.0.11"},"devDependencies":{},"type":"module"}
